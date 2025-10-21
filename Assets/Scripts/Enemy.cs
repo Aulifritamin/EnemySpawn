@@ -1,31 +1,35 @@
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class Enemy : MonoBehaviour
 {
     [SerializeField] private float _speed = 2f;
-    [SerializeField] private float TimeToLive = 15f;
+    [SerializeField] private float TimeToLive = 7f;
 
+    private Target _target;
     private Rigidbody _rigidBody;
-    private Vector3 _direction;
+    private Renderer _renderer;
     private Vector3 _initialPosition = Vector3.zero;
     private bool _isActive = false;
 
     private Coroutine _despawnCoroutine;
-    
+
     public event System.Action<Enemy> OnDespawn;
 
     private void Awake()
     {
         _rigidBody = GetComponent<Rigidbody>();
+        _renderer = GetComponent<Renderer>();
     }
 
     private void Update()
     {
         if (_isActive)
         {
-            _rigidBody.MovePosition(transform.position + _direction * _speed * Time.deltaTime);
+            Vector3 direction = (_target.Transform.position - transform.position).normalized;
+            Vector3 newPosition = transform.position + direction * _speed * Time.deltaTime;
+            _rigidBody.MovePosition(newPosition);
         }
     }
 
@@ -47,15 +51,20 @@ public class Enemy : MonoBehaviour
         _rigidBody.angularVelocity = _initialPosition;
     }
 
-    public void SetDirection(Vector3 setDirection)
+    public void SetTarget(Target target)
     {
-        _direction = setDirection.normalized;
+        _target = target;
     }
 
     public void SetSpawnPoint(Transform spawnPoint)
     {
         transform.position = spawnPoint.position;
         transform.rotation = spawnPoint.rotation;
+    }
+
+    public void SetColor(Color color)
+    {
+        _renderer.material.color = color;
     }
 
     private IEnumerator DespawningTimer()

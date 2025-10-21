@@ -6,12 +6,15 @@ using UnityEngine.Pool;
 public class Spawner : MonoBehaviour
 {
     [SerializeField] private Enemy _enemyPrefab;
-    [SerializeField] private List<Transform> _spawnPoint;
     [SerializeField] private Utilities _utilities;
+    [SerializeField] private Target _target;
 
     [SerializeField] private float _spawnInterval = 2f;
     [SerializeField] private int _poolSize = 10;
     [SerializeField] private int _maxPoolSize = 20;
+
+    private Color _enemyColor;
+    private Transform _spawnPoint;
 
     private ObjectPool<Enemy> _enemyPool;
 
@@ -25,6 +28,9 @@ public class Spawner : MonoBehaviour
             false,
             _poolSize,
             _maxPoolSize);
+
+        _enemyColor = _utilities.GetRandomColor();
+        _spawnPoint = GetComponent<Transform>();
     }
 
     private void Start()
@@ -52,12 +58,12 @@ public class Spawner : MonoBehaviour
 
     private void GettingFromPool(Enemy enemy)
     {
-        Transform randomPoint = _spawnPoint[_utilities.GetRandomSpawnPoint(_spawnPoint.Count)];
         Vector3 newDirection = _utilities.GetRandomDirection();
 
         enemy.gameObject.SetActive(true);
-        enemy.SetDirection(newDirection);
-        enemy.SetSpawnPoint(randomPoint);
+        enemy.SetSpawnPoint(_spawnPoint);
+        enemy.SetTarget(_target);
+        enemy.SetColor(_enemyColor);
         enemy.OnDespawn += ReturningToPool;
         enemy.ActivateWalk();
     }

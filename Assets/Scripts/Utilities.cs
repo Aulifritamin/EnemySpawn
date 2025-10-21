@@ -12,8 +12,13 @@ public class Utilities: MonoBehaviour
     public Vector3 GetRandomDirection()
     {
         float randomAngle = Random.Range(0f, 360f);
-        Quaternion randomRotation = Quaternion.Euler(0f, randomAngle, 0f);       
+        Quaternion randomRotation = Quaternion.Euler(0f, randomAngle, 0f);
 
         return randomRotation * Vector3.forward;
+    }
+    
+    public Color GetRandomColor()
+    {
+        return Random.ColorHSV();
     }
 }
