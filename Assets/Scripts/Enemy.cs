@@ -10,12 +10,12 @@ public class Enemy : MonoBehaviour
     private Target _target;
     private Rigidbody _rigidBody;
     private Renderer _renderer;
-    private Vector3 _initialPosition = Vector3.zero;
+    private Vector3 _zeroVelocity = Vector3.zero;
     private bool _isActive = false;
 
     private Coroutine _despawnCoroutine;
 
-    public event System.Action<Enemy> OnDespawn;
+    public event System.Action<Enemy> Despawned;
 
     private void Awake()
     {
@@ -29,6 +29,7 @@ public class Enemy : MonoBehaviour
         {
             Vector3 direction = (_target.Transform.position - transform.position).normalized;
             Vector3 newPosition = transform.position + direction * _speed * Time.deltaTime;
+            
             _rigidBody.MovePosition(newPosition);
         }
     }
@@ -47,8 +48,8 @@ public class Enemy : MonoBehaviour
             _despawnCoroutine = null;
         }
         _isActive = false;
-        _rigidBody.linearVelocity = _initialPosition;
-        _rigidBody.angularVelocity = _initialPosition;
+        _rigidBody.linearVelocity = _zeroVelocity;
+        _rigidBody.angularVelocity = _zeroVelocity;
     }
 
     public void SetTarget(Target target)
@@ -70,6 +71,6 @@ public class Enemy : MonoBehaviour
     private IEnumerator DespawningTimer()
     {
         yield return new WaitForSeconds(TimeToLive);
-        OnDespawn?.Invoke(this);
+        Despawned?.Invoke(this);
     }
 }

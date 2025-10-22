@@ -1,24 +1,41 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Target : MonoBehaviour
 {
-    private Vector3 _startPosition;
-    private Vector3 movementDirection = Vector3.back;
-
-    private float speed = 2f;
-    private float distance = 2f;
-
     public Transform Transform => transform;
+    [SerializeField] public Transform WayPoints;
 
-    private void Start()
+    private List<WayPoint> _directions;
+    [SerializeField] private float _speed = 2f;
+
+    private Vector3 _currentDirection;
+
+    private void Awake()
     {
-        _startPosition = transform.position;
+        _directions = WayPoints.GetComponentsInChildren<WayPoint>().ToList(); 
+        ChangeDirection();
     }
-    
+
     private void Update()
     {
-        float walk = Mathf.PingPong(Time.time * speed, distance);
+        if (Vector3.Distance(transform.position, _currentDirection) < 0.1f)
+        {
+            ChangeDirection();
+        }
+        else
+        {
+            transform.position = Vector3.MoveTowards(transform.position, _currentDirection, _speed * Time.deltaTime);
+        }
+    }
 
-        transform.position = _startPosition + movementDirection.normalized * walk;
+    private void ChangeDirection()
+    {
+        if (_directions.Count == 0)
+            return;
+
+        int randomIndex = Random.Range(0, _directions.Count);
+        _currentDirection = _directions[randomIndex].Position;
     }
 }

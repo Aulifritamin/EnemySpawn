@@ -6,15 +6,13 @@ using UnityEngine.Pool;
 public class Spawner : MonoBehaviour
 {
     [SerializeField] private Enemy _enemyPrefab;
-    [SerializeField] private Utilities _utilities;
-    [SerializeField] private Target _target;
+
+    [SerializeField] private List<SpawnPoint> _spawnPoint;
+    [SerializeField] private List<Target> _targets;
 
     [SerializeField] private float _spawnInterval = 2f;
     [SerializeField] private int _poolSize = 10;
     [SerializeField] private int _maxPoolSize = 20;
-
-    private Color _enemyColor;
-    private Transform _spawnPoint;
 
     private ObjectPool<Enemy> _enemyPool;
 
@@ -22,22 +20,21 @@ public class Spawner : MonoBehaviour
     {
         _enemyPool = new ObjectPool<Enemy>(
             CreateEnemy,
-            actionOnGet: GettingFromPool,
-            actionOnRelease: ReleasingCleanUp,
+            actionOnGet: GetFromPool,
+            actionOnRelease: ReleaseCleanUp,
             null,
             false,
             _poolSize,
             _maxPoolSize);
 
-        _enemyColor = _utilities.GetRandomColor();
-        _spawnPoint = GetComponent<Transform>();
+        AddTargetToSpawnPoints(_spawnPoint);
     }
 
     private void Start()
     {
         StartCoroutine(SpawnRoutine());
     }
-    
+
     private IEnumerator SpawnRoutine()
     {
         WaitForSeconds timer = new WaitForSeconds(_spawnInterval);
@@ -56,27 +53,44 @@ public class Spawner : MonoBehaviour
         return newEnemy;
     }
 
-    private void GettingFromPool(Enemy enemy)
+    private void GetFromPool(Enemy enemy)
     {
-        Vector3 newDirection = _utilities.GetRandomDirection();
+        int spawnIndex = GetRandomIndex(_spawnPoint.Count);
+        SpawnPoint selectedSpawnPoint = _spawnPoint[spawnIndex];
 
         enemy.gameObject.SetActive(true);
-        enemy.SetSpawnPoint(_spawnPoint);
-        enemy.SetTarget(_target);
-        enemy.SetColor(_enemyColor);
-        enemy.OnDespawn += ReturningToPool;
+        selectedSpawnPoint.ChangeAtributes(enemy);
+        enemy.Despawned += ReturnToPool;
         enemy.ActivateWalk();
     }
 
-    private void ReleasingCleanUp(Enemy enemy)
+    private void ReleaseCleanUp(Enemy enemy)
     {
-        enemy.OnDespawn -= ReturningToPool;
+        enemy.Despawned -= ReturnToPool;
         enemy.ResetState();
         enemy.gameObject.SetActive(false);
     }
 
-    private void ReturningToPool(Enemy enemy)
+    private void AddTargetToSpawnPoints(List<SpawnPoint> spawnPoints)
+    {
+        if (_targets.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            spawnPoints[i].SetTarget(_targets[i % _targets.Count]);
+        }
+    }
+
+    private void ReturnToPool(Enemy enemy)
     {
         _enemyPool.Release(enemy);
+    }
+
+    private int GetRandomIndex(int listCount)
+    {
+        return Random.Range(0, listCount);
     }
 }
