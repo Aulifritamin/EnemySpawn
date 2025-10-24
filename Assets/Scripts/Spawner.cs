@@ -8,7 +8,6 @@ public class Spawner : MonoBehaviour
     [SerializeField] private Enemy _enemyPrefab;
 
     [SerializeField] private List<SpawnPoint> _spawnPoint;
-    [SerializeField] private List<Target> _targets;
 
     [SerializeField] private float _spawnInterval = 2f;
     [SerializeField] private int _poolSize = 10;
@@ -19,15 +18,13 @@ public class Spawner : MonoBehaviour
     private void Awake()
     {
         _enemyPool = new ObjectPool<Enemy>(
-            CreateEnemy,
-            actionOnGet: GetFromPool,
+            () => CreateEnemy(_enemyPrefab),
+            actionOnGet: ActivateEnemyFromPool,
             actionOnRelease: ReleaseCleanUp,
             null,
             false,
             _poolSize,
             _maxPoolSize);
-
-        AddTargetToSpawnPoints(_spawnPoint);
     }
 
     private void Start()
@@ -46,21 +43,20 @@ public class Spawner : MonoBehaviour
         }
     }
 
-    private Enemy CreateEnemy()
+    private Enemy CreateEnemy(Enemy prefab)
     {
-        Enemy newEnemy = Instantiate(_enemyPrefab);
+        Enemy newEnemy = Instantiate(prefab);
         newEnemy.gameObject.SetActive(false);
+        newEnemy.Despawned += ReturnToPool;
         return newEnemy;
     }
 
-    private void GetFromPool(Enemy enemy)
+    private void ActivateEnemyFromPool(Enemy enemy)
     {
         int spawnIndex = GetRandomIndex(_spawnPoint.Count);
         SpawnPoint selectedSpawnPoint = _spawnPoint[spawnIndex];
-
         enemy.gameObject.SetActive(true);
-        selectedSpawnPoint.ChangeAtributes(enemy);
-        enemy.Despawned += ReturnToPool;
+        enemy.Init(selectedSpawnPoint.AssignedTarget, selectedSpawnPoint.Transform, selectedSpawnPoint.EnemyColor);
         enemy.ActivateWalk();
     }
 
@@ -69,19 +65,6 @@ public class Spawner : MonoBehaviour
         enemy.Despawned -= ReturnToPool;
         enemy.ResetState();
         enemy.gameObject.SetActive(false);
-    }
-
-    private void AddTargetToSpawnPoints(List<SpawnPoint> spawnPoints)
-    {
-        if (_targets.Count == 0)
-        {
-            return;
-        }
-
-        for (int i = 0; i < spawnPoints.Count; i++)
-        {
-            spawnPoints[i].SetTarget(_targets[i % _targets.Count]);
-        }
     }
 
     private void ReturnToPool(Enemy enemy)

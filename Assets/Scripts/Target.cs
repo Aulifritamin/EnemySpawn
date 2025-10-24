@@ -4,23 +4,25 @@ using UnityEngine;
 
 public class Target : MonoBehaviour
 {
-    public Transform Transform => transform;
-    [SerializeField] public Transform WayPoints;
-
-    private List<WayPoint> _directions;
+    [SerializeField] private Transform _wayPointsContainer;
     [SerializeField] private float _speed = 2f;
+    [SerializeField] private float _minDistanceToWaypoint = 0.3f;
+    [SerializeField] private Transform[] _targetPoints = new Transform[0];
 
+    private float _sqrMinDistanceToWaypoint;
     private Vector3 _currentDirection;
+
+    public Transform Transform => transform;
 
     private void Awake()
     {
-        _directions = WayPoints.GetComponentsInChildren<WayPoint>().ToList(); 
+        _sqrMinDistanceToWaypoint = _minDistanceToWaypoint * _minDistanceToWaypoint;
         ChangeDirection();
     }
 
     private void Update()
     {
-        if (Vector3.Distance(transform.position, _currentDirection) < 0.1f)
+        if (IsEnoughClose(transform.position, _currentDirection))
         {
             ChangeDirection();
         }
@@ -30,12 +32,27 @@ public class Target : MonoBehaviour
         }
     }
 
+    private bool IsEnoughClose(Vector3 start, Vector3 end)
+    {
+        return (end - start).sqrMagnitude <= _sqrMinDistanceToWaypoint;
+    }
+
     private void ChangeDirection()
     {
-        if (_directions.Count == 0)
+        if (_targetPoints.Length == 0)
             return;
 
-        int randomIndex = Random.Range(0, _directions.Count);
-        _currentDirection = _directions[randomIndex].Position;
+        int randomIndex = Random.Range(0, _targetPoints.Length);
+        _currentDirection = _targetPoints[randomIndex].position;
+    }
+
+    [ContextMenu("Refresh Child Array")]
+    private void RefreshChildArray()
+    {
+        int pointCount = _wayPointsContainer.childCount;
+        _targetPoints = new Transform[pointCount];
+
+        for (int i = 0; i < pointCount; i++)
+            _targetPoints[i] = _wayPointsContainer.GetChild(i);
     }
 }

@@ -40,6 +40,13 @@ public class Enemy : MonoBehaviour
         _despawnCoroutine = StartCoroutine(DespawningTimer());
     }
 
+    public void Init(Target target, Transform spawnPoint, Color color)
+    {
+        SetTarget(target);
+        SetSpawnPoint(spawnPoint);
+        SetColor(color);
+    }
+
     public void ResetState()
     {
         if (_despawnCoroutine != null)
@@ -52,18 +59,18 @@ public class Enemy : MonoBehaviour
         _rigidBody.angularVelocity = _zeroVelocity;
     }
 
-    public void SetTarget(Target target)
+    private void SetTarget(Target target)
     {
         _target = target;
     }
 
-    public void SetSpawnPoint(Transform spawnPoint)
+    private void SetSpawnPoint(Transform spawnPoint)
     {
         transform.position = spawnPoint.position;
         transform.rotation = spawnPoint.rotation;
     }
 
-    public void SetColor(Color color)
+    private void SetColor(Color color)
     {
         _renderer.material.color = color;
     }
