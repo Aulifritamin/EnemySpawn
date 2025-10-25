@@ -10,7 +10,7 @@ public class Target : MonoBehaviour
     [SerializeField] private Transform[] _targetPoints = new Transform[0];
 
     private float _sqrMinDistanceToWaypoint;
-    private Vector3 _currentDirection;
+    private Vector3 _currentTarget;
 
     public Transform Transform => transform;
 
@@ -22,13 +22,13 @@ public class Target : MonoBehaviour
 
     private void Update()
     {
-        if (IsEnoughClose(transform.position, _currentDirection))
+        if (IsEnoughClose(transform.position, _currentTarget))
         {
             ChangeDirection();
         }
         else
         {
-            transform.position = Vector3.MoveTowards(transform.position, _currentDirection, _speed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, _currentTarget, _speed * Time.deltaTime);
         }
     }
 
@@ -43,7 +43,7 @@ public class Target : MonoBehaviour
             return;
 
         int randomIndex = Random.Range(0, _targetPoints.Length);
-        _currentDirection = _targetPoints[randomIndex].position;
+        _currentTarget = _targetPoints[randomIndex].position;
     }
 
     [ContextMenu("Refresh Child Array")]

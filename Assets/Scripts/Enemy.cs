@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Pool;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class Enemy : MonoBehaviour
@@ -11,6 +12,7 @@ public class Enemy : MonoBehaviour
     private Rigidbody _rigidBody;
     private Renderer _renderer;
     private Vector3 _zeroVelocity = Vector3.zero;
+    private ObjectPool<Enemy> _pool;
     private bool _isActive = false;
 
     private Coroutine _despawnCoroutine;
@@ -40,11 +42,12 @@ public class Enemy : MonoBehaviour
         _despawnCoroutine = StartCoroutine(DespawningTimer());
     }
 
-    public void Init(Target target, Transform spawnPoint, Color color)
+    public void Init(Target target, Transform spawnPoint, Color color, ObjectPool<Enemy> pool)
     {
         SetTarget(target);
         SetSpawnPoint(spawnPoint);
         SetColor(color);
+        SetPool(pool);
     }
 
     public void ResetState()
@@ -59,10 +62,21 @@ public class Enemy : MonoBehaviour
         _rigidBody.angularVelocity = _zeroVelocity;
     }
 
+    public void SetPool(ObjectPool<Enemy> pool)
+    {
+        _pool = pool;
+    }
+
     private void SetTarget(Target target)
     {
         _target = target;
     }
+
+    public void ReturnToPool()
+    {
+        _pool.Release(this);
+    }
+
 
     private void SetSpawnPoint(Transform spawnPoint)
     {

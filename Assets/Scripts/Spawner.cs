@@ -1,30 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Pool;
 
 public class Spawner : MonoBehaviour
 {
-    [SerializeField] private Enemy _enemyPrefab;
-
     [SerializeField] private List<SpawnPoint> _spawnPoint;
 
     [SerializeField] private float _spawnInterval = 2f;
     [SerializeField] private int _poolSize = 10;
     [SerializeField] private int _maxPoolSize = 20;
 
-    private ObjectPool<Enemy> _enemyPool;
+    private Dictionary<Enemy, ObjectPool<Enemy>> _enemyPool = new Dictionary<Enemy, ObjectPool<Enemy>>();
 
     private void Awake()
     {
-        _enemyPool = new ObjectPool<Enemy>(
-            () => CreateEnemy(_enemyPrefab),
-            actionOnGet: ActivateEnemyFromPool,
-            actionOnRelease: ReleaseCleanUp,
-            null,
-            false,
-            _poolSize,
-            _maxPoolSize);
+        InitateEnemyPool();
     }
 
     private void Start()
@@ -32,6 +25,27 @@ public class Spawner : MonoBehaviour
         StartCoroutine(SpawnRoutine());
     }
 
+    private void InitateEnemyPool()
+    {
+        foreach (var spawnPoint in _spawnPoint)
+        {
+            if (spawnPoint.EnemyPrefab != null && !_enemyPool.ContainsKey(spawnPoint.EnemyPrefab))
+            {
+                Enemy prefab = spawnPoint.EnemyPrefab;
+
+                ObjectPool<Enemy> pool = new ObjectPool<Enemy>(
+                    () => CreateEnemy(prefab),
+                    actionOnGet: ActivateEnemyFromPool,
+                    actionOnRelease: ReleaseCleanUp,
+                    actionOnDestroy: (enemy) => Destroy(enemy.gameObject),
+                    collectionCheck: false,
+                    _poolSize,
+                    _maxPoolSize);
+
+                _enemyPool.Add(prefab, pool);
+            }
+        }
+    }
     private IEnumerator SpawnRoutine()
     {
         WaitForSeconds timer = new WaitForSeconds(_spawnInterval);
@@ -39,7 +53,15 @@ public class Spawner : MonoBehaviour
         while (enabled)
         {
             yield return timer;
-            _enemyPool.Get();
+            int spawnIndex = GetRandomIndex(_spawnPoint.Count);
+            SpawnPoint selectedSpawnPoint = _spawnPoint[spawnIndex];
+            Enemy prefabToSpawn = selectedSpawnPoint.EnemyPrefab;
+
+            if (prefabToSpawn != null && _enemyPool.TryGetValue(prefabToSpawn, out ObjectPool<Enemy> pool))
+            {
+                Enemy enemy = pool.Get();
+                enemy.Init(selectedSpawnPoint.AssignedTarget, selectedSpawnPoint.Transform, selectedSpawnPoint.EnemyColor, pool);
+            }
         }
     }
 
@@ -47,16 +69,13 @@ public class Spawner : MonoBehaviour
     {
         Enemy newEnemy = Instantiate(prefab);
         newEnemy.gameObject.SetActive(false);
-        newEnemy.Despawned += ReturnToPool;
         return newEnemy;
     }
 
     private void ActivateEnemyFromPool(Enemy enemy)
     {
-        int spawnIndex = GetRandomIndex(_spawnPoint.Count);
-        SpawnPoint selectedSpawnPoint = _spawnPoint[spawnIndex];
+        enemy.Despawned += ReturnToPool;
         enemy.gameObject.SetActive(true);
-        enemy.Init(selectedSpawnPoint.AssignedTarget, selectedSpawnPoint.Transform, selectedSpawnPoint.EnemyColor);
         enemy.ActivateWalk();
     }
 
@@ -69,7 +88,7 @@ public class Spawner : MonoBehaviour
 
     private void ReturnToPool(Enemy enemy)
     {
-        _enemyPool.Release(enemy);
+        enemy.ReturnToPool();
     }
 
     private int GetRandomIndex(int listCount)
