@@ -48,11 +48,11 @@ public class Spawner : MonoBehaviour
     }
     private IEnumerator SpawnRoutine()
     {
-        WaitForSeconds timer = new WaitForSeconds(_spawnInterval);
+        WaitForSeconds delay = new WaitForSeconds(_spawnInterval);
 
         while (enabled)
         {
-            yield return timer;
+            yield return delay;
             int spawnIndex = GetRandomIndex(_spawnPoint.Count);
             SpawnPoint selectedSpawnPoint = _spawnPoint[spawnIndex];
             Enemy prefabToSpawn = selectedSpawnPoint.EnemyPrefab;
